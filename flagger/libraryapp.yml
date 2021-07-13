@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: libraryapp-deploy
+  namespace: test
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: libraryapp
+  template:
+    metadata:
+      labels:
+        app: libraryapp
+    spec:
+      containers:
+      - name: libraryapp
+        image: docker.io/javiergarciagon/mca-m4-a4-pr2:v1
+        resources:
+          requests:
+            cpu: "200m"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8881
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:mysql://mysql-service:3306/test
+        - name: SERVER_PORT
+          value: "8881"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: libraryapp-service
+  namespace: test
+  labels:
+    app: libraryapp
+spec:
+  ports:
+  - port: 8881
+    targetPort: 8881
+    protocol: TCP
+    name: libraryapp-port
+  selector:
+    app: libraryapp
+  type: ClusterIP
+
+## MySQL DATABASE
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: docker.io/mysql:8.0.22
+        resources:
+          requests:
+            cpu: "200m"
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_DATABASE
+          value: test
+        - name: MYSQL_ROOT_PASSWORD
+          value: pass
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+  namespace: test
+  labels:
+    app: mysql
+spec:
+  ports:
+    - port: 3306
+      targetPort: 3306
+      protocol: TCP
+      name: mysql-port
+  selector:
+    app: mysql
+  type: ClusterIP

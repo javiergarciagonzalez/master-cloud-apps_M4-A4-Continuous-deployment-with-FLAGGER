@@ -1,11 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: libraryapp-deploy
+  name: libraryapp
   namespace: test
 spec:
   strategy:
-    type: Recreate
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
   replicas: 1
   selector:
     matchLabels:
@@ -15,6 +17,7 @@ spec:
       labels:
         app: libraryapp
     spec:
+      restartPolicy: Always
       containers:
       - name: libraryapp
         image: docker.io/javiergarciagon/mca-m4-a4-pr2:v1
@@ -33,7 +36,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: libraryapp-service
+  name: libraryapp
   namespace: test
   labels:
     app: libraryapp
@@ -45,52 +48,4 @@ spec:
     name: libraryapp-port
   selector:
     app: libraryapp
-  type: ClusterIP
-
-## MySQL DATABASE
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: mysql
-  namespace: test
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: mysql
-  template:
-    metadata:
-      labels:
-        app: mysql
-    spec:
-      containers:
-      - name: mysql
-        image: docker.io/mysql:8.0.22
-        resources:
-          requests:
-            cpu: "200m"
-        ports:
-        - containerPort: 3306
-        env:
-        - name: MYSQL_DATABASE
-          value: test
-        - name: MYSQL_ROOT_PASSWORD
-          value: pass
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: mysql-service
-  namespace: test
-  labels:
-    app: mysql
-spec:
-  ports:
-    - port: 3306
-      targetPort: 3306
-      protocol: TCP
-      name: mysql-port
-  selector:
-    app: mysql
   type: ClusterIP
